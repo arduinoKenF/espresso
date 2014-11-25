@@ -2,7 +2,7 @@
 //INCLUDES PUMP OUTPUT MAPPED FROM PROFILE (IN AUTO MODE)
 //                     MAPPED FROM POT (in manual mode)
 //THIS DOES NOT INCLUDE ANY MONITORING OF ACTUAL PRESSURE
-
+//Modified to use grouphead button (must be held on during brew)
 #include "brewProfiles.h"
 // IO PINS
 //0 Serial Rx
@@ -33,7 +33,7 @@ const int boilerTempMax=202;
 
 // Store last time buttons were down
 unsigned long lastButtonPress = 0;    
-unsigned long lastOKPress=0;
+unsigned long lastGroupPress=0;
 
 int menuitem=0;
 
@@ -60,7 +60,7 @@ void loop()
 {
 unsigned long t=millis();
 bool buttonPress=digitalRead(buttonPin);
-bool okPress=digitalRead(okPin);
+bool groupPress=digitalRead(groupButton);
 
 //ignore button press if it's within .4 of a second since the last one
 if ( (buttonPress==LOW) && ( (t-lastButtonPress) >400 ) )
@@ -69,17 +69,13 @@ if ( (buttonPress==LOW) && ( (t-lastButtonPress) >400 ) )
       if(menuitem > maxMenuitem)
         menuitem=1;
       showMenuItem();
-      lastButtonPress=t;  
+      lastGroupPress=t;  
     }
 
-if( (okPress==LOW) && ( ( t-lastOKPress) > 400 ) )
-  {lastOKPress=t;
+if( (groupPress==LOW) && ( ( menuitem > 0) ) )
+  {lastGroupPress=t;
   switch(menuitem)
-    {case 0:
-      menuitem=1;
-      break;
-    
-     case 1:
+    {case 1:
        manualBrew();
        break;   
 
@@ -91,7 +87,7 @@ if( (okPress==LOW) && ( ( t-lastOKPress) > 400 ) )
   }// end of if OK pressed
   
 //if neither key has been pressed for 10 seconds go back to "ready"
-if ( ((t-lastOKPress)>10000) && ( t-lastButtonPress ) > 10000 && (menuitem != 0))   
+if ( ((t-lastGroupPress)>10000) && ( t-lastButtonPress ) > 10000 && (menuitem != 0))   
   {
   menuitem=0;
   showMenuItem();
@@ -126,7 +122,11 @@ int stepCount = activeBrew->stepCount;
 Serial.print("Dispensing ");
 Serial.println(activeBrew -> name );
 for(n=0;n< stepCount ;n++)
- {Serial.println("Pressure ");
+ {
+  //exit loop if groupButton is released 
+  if (digitalRead(groupButton)==HIGH)
+    break;   
+   Serial.println("Pressure ");
   Serial.println(activeBrew ->steps[n].pressure,DEC);
   delay(activeBrew->steps[n].duration * 100);
   //This is crude.
@@ -135,10 +135,13 @@ for(n=0;n< stepCount ;n++)
   int motorValue = map(activeBrew -> steps[n].pressure, 0, 92, 0, 255);
   analogWrite(pumpPWM, motorValue);
  }
+ 
 activeBrew=NULL;
 Serial.println("Enjoy!");
 analogWrite(pumpPWM,0);
 showMenuItem();
+delay(100);//allow debounce of groupButton
+lastGroupPress=millis();
 }
 
 void manualBrew()
@@ -153,7 +156,10 @@ while(digitalRead(groupButton)==LOW)
   Serial.print(".");
    delay(200);
   }
+
 Serial.println("");
 showMenuItem(); 
 analogWrite(pumpPWM, 0);
+delay(100);//allow debounce of groupButton
+lastGroupPress=millis();
 }
