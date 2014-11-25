@@ -144,7 +144,7 @@ showMenuItem();
 void manualBrew()
 {
 Serial.print("Dispensing");
-while(digitalRead(groupButton)==HIGH)
+while(digitalRead(groupButton)==LOW)
   {
   int potValue=analogRead(pressurePot);
   int motorValue=map (potValue,0,1023, 0,255); 
