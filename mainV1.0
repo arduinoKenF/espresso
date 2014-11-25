@@ -2,7 +2,7 @@
 //INCLUDES PUMP OUTPUT MAPPED FROM PROFILE (IN AUTO MODE)
 //                     MAPPED FROM POT (in manual mode)
 //THIS DOES NOT INCLUDE ANY MONITORING OF ACTUAL PRESSURE
-//Modified to use grouphead button (must be held on during brew)
+
 #include "brewProfiles.h"
 // IO PINS
 //0 Serial Rx
@@ -11,7 +11,7 @@ const int buttonPin = 2;
 const int okPin = 3;
 const int inletRelay = 4;
 const int heaterRelay = 5;
-const int PRvalve = 6; //Pressure relief
+const int groupHeadValve = 6; //Pressure relief
 //7 spare Relay
 const int floatSwitch = 8;  
 const int pumpPWM = 9;  
@@ -118,7 +118,10 @@ void autoBrew(int brewNo)
 int n;
 activeBrew = &BREWS[brewNo];
 int stepCount = activeBrew->stepCount;
-
+//make Sure grouphead valve is closed
+//RELAY IS ACTIVE LOW BUT VALVE IS WIRED
+//TO NC SWITCH
+digitalWrite(groupHeadValve, LOW);
 Serial.print("Dispensing ");
 Serial.println(activeBrew -> name );
 for(n=0;n< stepCount ;n++)
@@ -142,10 +145,17 @@ analogWrite(pumpPWM,0);
 showMenuItem();
 delay(100);//allow debounce of groupButton
 lastGroupPress=millis();
+//make Sure grouphead valve is closed
+digitalWrite(groupHeadValve, HIGH);
 }
 
 void manualBrew()
 {
+//make Sure grouphead valve is closed
+//RELAY IS ACTIVE LOW BUT VALVE IS WIRED
+//TO NC SWITCH
+digitalWrite(groupHeadValve, LOW);
+
 Serial.print("Dispensing");
 while(digitalRead(groupButton)==LOW)
   {
@@ -162,4 +172,6 @@ showMenuItem();
 analogWrite(pumpPWM, 0);
 delay(100);//allow debounce of groupButton
 lastGroupPress=millis();
+//make Sure grouphead valve is open again
+digitalWrite(groupHeadValve, HIGH);
 }
