@@ -69,7 +69,7 @@ if ( (buttonPress==LOW) && ( (t-lastButtonPress) >400 ) )
       if(menuitem > maxMenuitem)
         menuitem=1;
       showMenuItem();
-      lastGroupPress=t;  
+      lastButtonPress=t;  
     }
 
 if( (groupPress==LOW) && ( ( menuitem > 0) ) )
